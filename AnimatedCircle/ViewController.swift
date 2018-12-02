@@ -9,8 +9,7 @@
 import UIKit
 
 class ViewController: UIViewController, URLSessionDownloadDelegate {
-    let shapeLayer = CAShapeLayer()
-    
+    var shapeLayer: CAShapeLayer!
     var pulsatingLayer: CAShapeLayer!
     
     //percentage label
@@ -37,63 +36,55 @@ class ViewController: UIViewController, URLSessionDownloadDelegate {
         animatePulsatingLayer()
     }
     
+    private func createCircleShapeLayer(strokeColor: UIColor, fillColor: UIColor) -> CAShapeLayer {
+        let layer = CAShapeLayer()
+        let circularPath = UIBezierPath(arcCenter: .zero, radius: 100, startAngle: 0, endAngle: 2 * CGFloat.pi, clockwise: true) //2 * PI is complete circle, PI is halfway
+        
+        layer.path = circularPath.cgPath
+        layer.strokeColor = strokeColor.cgColor
+        layer.fillColor = fillColor.cgColor
+        layer.lineWidth = 20
+        layer.lineCap = CAShapeLayerLineCap.round
+        layer.position = view.center
+        
+        return layer
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = UIColor.backgroundColor //generated via our helper file
-        
         setupNotificationObservers() //call observer that watches for when app enters foreground
-        
-        //shapeLayer path for our circle
-        
-        //MARK:- Track layer
-        let trackLayer = CAShapeLayer()
-        let circularPath = UIBezierPath(arcCenter: .zero, radius: 100, startAngle: 0, endAngle: 2 * CGFloat.pi, clockwise: true) //2 * PI is complete circle, PI is halfway
-        
-        //MARK:- Pulsating layer
-        pulsatingLayer = CAShapeLayer()
-        pulsatingLayer.path = circularPath.cgPath
-        pulsatingLayer.strokeColor = UIColor.clear.cgColor
-        pulsatingLayer.fillColor = UIColor.pulsatingFillColor.cgColor
-        pulsatingLayer.lineWidth = 10
-        pulsatingLayer.lineCap = CAShapeLayerLineCap.round
-        pulsatingLayer.position = view.center
-        
-        view.layer.addSublayer(pulsatingLayer)
-        animatePulsatingLayer()
-        
-        //add stroke highlight, set fill color
-        trackLayer.path = circularPath.cgPath
-        trackLayer.strokeColor = UIColor.trackStrokeColor.cgColor
-        trackLayer.fillColor = UIColor.backgroundColor.cgColor
-        trackLayer.lineWidth = 10
-        trackLayer.lineCap = CAShapeLayerLineCap.round //rounding the line edges
-        
-        trackLayer.position = view.center
-        view.layer.addSublayer(trackLayer)
-        
-        //MARK:- CAShapeLayer circle
-        //start at the top, end at the top
-        shapeLayer.path = circularPath.cgPath
-        
-        //add stroke highlight, set fill color
-        shapeLayer.strokeColor = UIColor.outlineStrokeColor.cgColor
-        shapeLayer.fillColor = UIColor.clear.cgColor
-        shapeLayer.lineWidth = 20
-        shapeLayer.lineCap = CAShapeLayerLineCap.round //rounding the line edges
-        shapeLayer.position = view.center
-        shapeLayer.transform = CATransform3DMakeRotation(-CGFloat.pi / 2, 0, 0, 1) //rotating the shapeLayer 90 degrees, into the screen
-        shapeLayer.strokeEnd = 0 //where to stop stroking the path, 0 becau we'll animate this
-        
-        view.layer.addSublayer(shapeLayer)
+        setupCircleLayers() //creates the layers, adds them to view's subview list...
         
         //MARK:- Tap gesture
         //circle shape layer will animate on tap
         view.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleTap)))
         
+        setupPercentageLabel()
+    }
+    
+    private func setupPercentageLabel() {
         //adding the percentage label
         view.addSubview(percentageLabel)
         percentageLabel.frame = CGRect(x: 0, y: 0, width: 100, height: 100)
         percentageLabel.center = view.center
+    }
+    
+    private func setupCircleLayers() {
+        //MARK:- Pulsating layer
+        pulsatingLayer = createCircleShapeLayer(strokeColor: .clear, fillColor: UIColor.pulsatingFillColor)
+        view.layer.addSublayer(pulsatingLayer)
+        animatePulsatingLayer()
+        
+        //MARK:- Track layer
+        let trackLayer = createCircleShapeLayer(strokeColor: UIColor.trackStrokeColor, fillColor: UIColor.backgroundColor)
+        view.layer.addSublayer(trackLayer)
+        
+        //MARK:- CAShapeLayer circle
+        shapeLayer = createCircleShapeLayer(strokeColor: .outlineStrokeColor, fillColor: .clear)
+        shapeLayer.transform = CATransform3DMakeRotation(-CGFloat.pi / 2, 0, 0, 1) //rotating the shapeLayer 90 degrees, into the screen
+        shapeLayer.strokeEnd = 0 //where to stop stroking the path, 0 becau we'll animate this
+        view.layer.addSublayer(shapeLayer)
     }
     
     private func animatePulsatingLayer() {
